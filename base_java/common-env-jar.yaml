@@ -1,0 +1,10 @@
+apiVersion: v1
+data:
+  NACOS_PASSWORD: xxx
+  NACOS_SERVICE_NAMESPACE: xxx
+  NACOS_USERNAME: xxx
+  testa: "a"
+  testb: "b"
+kind: ConfigMap
+metadata:
+  name: common-env-jar

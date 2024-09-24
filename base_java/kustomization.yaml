@@ -1,0 +1,4 @@
+resources:
+# gitlab-ci遍历微服务清单文件microservice.yaml，渲染deployment.yaml，生成全量微服务deployment_all.yaml
+- deployment_all.yaml
+- common-env-jar.yaml

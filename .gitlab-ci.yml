@@ -1,0 +1,73 @@
+# 镜像需要有envsubst命令
+image: xxxx/kustomize-k8syaml:v0.0.1
+stages:
+  - kustomize
+
+kustomize:
+  stage: kustomize
+  tags:
+    - sre
+  script:
+    - |-
+      # 将overlays下每个子目录都进行渲染
+      for overlays_dir in `ls overlays|sed 's/\///g'`
+      do        
+        # 先渲染base_xx下的全量模版
+        if [ -f "overlays/$overlays_dir/microservice.yaml" ];then
+          for dir in `ls|grep ^base_|sed 's/\///g'`
+          do
+            keyword=$(echo $dir|cut -d "_" -f2)
+            microservice_list=$(awk -v keyword=$keyword '$1 == keyword":" {flag=1; next} flag && /^-/ {print $2} flag && /^[^ -]/ {flag=0}' overlays/$overlays_dir/microservice.yaml)
+            if [ -z "$microservice_list" ]; then
+              if [ -f "$dir/microservice.yaml" ];then
+                microservice_list=$(awk -v keyword=$keyword '$1 == keyword":" {flag=1; next} flag && /^-/ {print $2} flag && /^[^ -]/ {flag=0}' $dir/microservice.yaml)
+              else
+                # base_xx不存在microservice.yaml，无需处理
+                continue
+              fi              
+            fi  
+
+            rm -rf $dir/deployment_all.yaml
+            for name in $microservice_list
+            do
+              export deployment_name=$name
+              envsubst <$dir/deployment.yaml >>$dir/deployment_all.yaml
+              echo "---">>$dir/deployment_all.yaml
+            done
+           
+          done
+        else
+          for dir in `ls|grep ^base_|sed 's/\///g'`
+          do
+            keyword=$(echo $dir|cut -d "_" -f2)
+            if [ -f "$dir/microservice.yaml" ];then
+              microservice_list=$(awk -v keyword=$keyword '$1 == keyword":" {flag=1; next} flag && /^-/ {print $2} flag && /^[^ -]/ {flag=0}' $dir/microservice.yaml)
+              rm -rf $dir/deployment_all.yaml
+              for name in $microservice_list
+              do
+                export deployment_name=$name
+                envsubst <$dir/deployment.yaml >>$dir/deployment_all.yaml
+                echo "---">>$dir/deployment_all.yaml
+              done    
+            else
+              # base_xx不存在microservice.yaml，无需处理
+              :
+            fi
+          done
+        fi
+
+        # 渲染最终制品文件
+        mkdir -p archive/$overlays_dir
+        archive_file=archive/$overlays_dir/all.yaml
+        kustomize build overlays/$overlays_dir>$archive_file
+
+        # 归档制品文件
+        # 此处省略相关脚本
+
+      done
+
+  only:
+    variables:
+      - $CI_COMMIT_MESSAGE =~ /yaml/
+    refs:
+      - master

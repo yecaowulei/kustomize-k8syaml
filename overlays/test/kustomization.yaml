@@ -1,0 +1,38 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base_java
+  - ../../base_go
+namespace: namespace-test
+
+configMapGenerator:
+  - name: common-env-jar
+    behavior: merge
+    literals:
+      - NACOS_PASSWORD=test-xxxx
+      - NACOS_SERVICE_NAMESPACE=namespace-test
+      - NACOS_USERNAME=aaaa
+
+images:
+  - name: xxxx/test/java-testa
+    newName: xxxx/test1/java-testa
+    newTag: testa-20240924-1
+  - name: xxxx/test/java-testb
+    newTag: testa-20240924-2    
+
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value: 
+          limits:
+            cpu: "1"
+            memory: 2Gi
+          requests:
+            cpu: 250m
+            memory: 2Gi
+    target:
+      kind: Deployment
+      name: java-testa
+
+
