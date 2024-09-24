@@ -70,4 +70,4 @@ kustomize:
     variables:
       - $CI_COMMIT_MESSAGE =~ /yaml/
     refs:
-      - master
+      - main
