@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: config
+metadata:
+  name: version
+  annotations:
+    config.kubernetes.io/function: |
+      exec: 
+        path: ../../plugins/silly-generator.sh      
+spec:
+  version:
+    testa: 20241009-1
+    testb: 20241009-2
+
